@@ -17,7 +17,7 @@ type V8Context struct {
 	v8context unsafe.Pointer
 }
 
-func NewV8Context() *V8Context {
+func NewContext() *V8Context {
 	v := &V8Context{C.v8_create()}
 	runtime.SetFinalizer(v, func(p *V8Context) {
 		C.v8_release(p.v8context)

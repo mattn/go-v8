@@ -4,7 +4,7 @@ import "v8"
 import "reflect"
 
 func main() {
-	v8ctx := v8.NewV8Context()
+	v8ctx := v8.NewContext()
 	ret, err := v8ctx.Eval(`
 var a = 1;
 a += 2;
