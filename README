@@ -1,1 +1,10 @@
 Currently, go-v8 only works on win32.
+
+COMPILE:
+	# gomake v8wrap.dll
+	# gomake install
+
+EXAMPLE:
+	# 8g example.go
+	# 8l example.go
+	# ./example
