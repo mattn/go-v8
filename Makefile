@@ -1,6 +1,6 @@
 include $(GOROOT)/src/Make.inc
 
-TARG     = v8
+TARG     = github.com/mattn/go-v8/v8
 CGOFILES = v8.go
 
 CGO_CFLAGS  = 

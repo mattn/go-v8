@@ -7,10 +7,13 @@ extern void v8_release(void* ctx);
 extern char* v8_execute(void* ctx, char* str);
 */
 import "C"
-import "unsafe"
+import (
+	"errors"
+	"unsafe"
+)
 import "runtime"
 import "json"
-import "os"
+
 import "bytes"
 
 type V8Context struct {
@@ -25,10 +28,10 @@ func NewContext() *V8Context {
 	return v
 }
 
-func (v *V8Context) Eval(in string) (res interface{}, err os.Error) {
+func (v *V8Context) Eval(in string) (res interface{}, err error) {
 	ptr := C.CString(in)
 	defer C.free(unsafe.Pointer(ptr))
-	ret := C.v8_execute(v.v8context, ptr);
+	ret := C.v8_execute(v.v8context, ptr)
 	if ret != nil {
 		out := C.GoString(ret)
 		var buf bytes.Buffer
@@ -37,5 +40,5 @@ func (v *V8Context) Eval(in string) (res interface{}, err os.Error) {
 		err = dec.Decode(&res)
 		return
 	}
-	return nil, os.NewError("failed to eval")
+	return nil, errors.New("failed to eval")
 }

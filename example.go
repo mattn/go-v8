@@ -1,7 +1,10 @@
 package main
 
-import "v8"
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+	"github.com/mattn/go-v8/v8"
+)
 
 func main() {
 	v8ctx := v8.NewContext()
@@ -11,7 +14,7 @@ a += 2;
 a;
 `)
 	if err != nil {
-		println(err.String())
+		fmt.Println(err)
 	} else {
 		println(ret.(float64))
 	}
@@ -19,9 +22,9 @@ a;
 	ret, err = v8ctx.Eval(`
 a+'b'
 `)
-	println(reflect.NewValue(ret).Type().Name())
+	println(reflect.ValueOf(ret).Type().Name())
 	if err != nil {
-		println(err.String())
+		fmt.Println(err)
 	} else {
 		println(ret.(string))
 	}
