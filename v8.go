@@ -12,7 +12,7 @@ import (
 	"unsafe"
 )
 import "runtime"
-import "json"
+import "encoding/json"
 
 import "bytes"
 
