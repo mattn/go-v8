@@ -2,26 +2,57 @@ package v8
 
 /*
 #include <stdlib.h>
-extern void* v8_create();
-extern void v8_release(void* ctx);
-extern char* v8_execute(void* ctx, char* str);
+#include "v8wrap.h"
 */
 import "C"
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"runtime"
+	"text/template"
 	"unsafe"
 )
-import "runtime"
-import "encoding/json"
 
-import "bytes"
+var contexts = make(map[uint32]*V8Context)
+
+var tmpl = template.Must(template.New("go-v8").Parse(`
+function {{.name}}() {
+  return _go_call({{.id}}, "{{.name}}", JSON.stringify([].slice.call(arguments)));
+}`))
+
+func init() {
+	var f = func(id uint32, n, a *C.char) *C.char {
+		c := contexts[id]
+		f := c.funcs[C.GoString(n)]
+		if f != nil {
+			var argv []interface{}
+			json.Unmarshal([]byte(C.GoString(a)), &argv)
+			ret := f(argv...)
+			if ret != nil {
+				b, _ := json.Marshal(ret)
+				return C.CString(string(b))
+			}
+			return nil
+		}
+		return C.CString("undefined")
+	}
+	C.v8_init(*(*unsafe.Pointer)(unsafe.Pointer(&f)))
+}
 
 type V8Context struct {
+	id uint32
 	v8context unsafe.Pointer
+	funcs map[string]func(... interface{}) interface{}
 }
 
 func NewContext() *V8Context {
-	v := &V8Context{C.v8_create()}
+	v := &V8Context{
+		uint32(len(contexts)),
+		C.v8_create(),
+		make(map[string]func(... interface{}) interface{}),
+	}
+	contexts[v.id] = v
 	runtime.SetFinalizer(v, func(p *V8Context) {
 		C.v8_release(p.v8context)
 	})
@@ -34,11 +65,29 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 	ret := C.v8_execute(v.v8context, ptr)
 	if ret != nil {
 		out := C.GoString(ret)
-		var buf bytes.Buffer
-		buf.Write([]byte(out))
-		dec := json.NewDecoder(&buf)
-		err = dec.Decode(&res)
-		return
+		if out != "" {
+			C.free(unsafe.Pointer(ret))
+			var buf bytes.Buffer
+			buf.Write([]byte(out))
+			dec := json.NewDecoder(&buf)
+			err = dec.Decode(&res)
+			return
+		}
+		return nil, nil
 	}
-	return nil, errors.New("failed to eval")
+	ret = C.v8_error(v.v8context)
+	out := C.GoString(ret)
+	C.free(unsafe.Pointer(ret))
+	return nil, errors.New(out)
+}
+
+func (v *V8Context) AddFunc(name string, f func(...interface{}) interface{}) error {
+	v.funcs[name] = f
+	b := bytes.NewBufferString("")
+	tmpl.Execute(b, map[string]interface{} {
+		"id": v.id,
+		"name": name,
+	})
+	_, err := v.Eval(b.String())
+	return err
 }
