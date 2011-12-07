@@ -19,5 +19,5 @@ v8wrap.dll : v8wrap.cc
 	dlltool -d v8wrap.def -l libv8wrap.a
 else
 libv8wrap.so : v8wrap.cc
-	g++ -shared -o libv8wrap.so -I. v8wrap.cc -lv8
+	g++ -fPIC -shared -o libv8wrap.so -I. v8wrap.cc -lv8
 endif
