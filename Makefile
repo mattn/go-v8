@@ -1,17 +1,17 @@
-include $(GOROOT)/src/Make.inc
-
-TARG     = github.com/mattn/go-v8/v8
-CGOFILES = v8.go
-
-CGO_CFLAGS  = 
-CGO_LDFLAGS  = -L. -lv8wrap -lstdc++
-ifeq ($(GOOS),windows)
-CGO_DEPS = v8wrap.dll
-else
-CGO_DEPS = libv8wrap.so
-endif
-
-include $(GOROOT)/src/Make.pkg
+#include $(GOROOT)/src/Make.inc
+#
+#TARG     = github.com/mattn/go-v8/v8
+#CGOFILES = v8.go
+#
+#CGO_CFLAGS  = 
+#CGO_LDFLAGS  = -L. -lv8wrap -lstdc++
+#ifeq ($(GOOS),windows)
+#CGO_DEPS = v8wrap.dll
+#else
+#CGO_DEPS = libv8wrap.so
+#endif
+#
+#include $(GOROOT)/src/Make.pkg
 
 ifeq ($(GOOS),windows)
 v8wrap.dll : v8wrap.cc

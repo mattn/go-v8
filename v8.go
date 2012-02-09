@@ -4,6 +4,7 @@ package v8
 #include <stdlib.h>
 #include "v8wrap.h"
 */
+// #cgo LDFLAGS: -L. -lv8wrap -lstdc++
 import "C"
 import (
 	"bytes"
