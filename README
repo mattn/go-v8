@@ -1,15 +1,16 @@
 WIN32
-	# gomake v8wrap.dll
-	# gomake install
+	# make v8wrap.dll
+	# go install
 
-	# 8g example.go
-	# 8l example.go
+	# cd example
+	# copy v8wrap.dll
+	# go build example.go
 	# ./example
 
 LINUX
-	# gomake libv8wrap.so
-	# gomake install
+	# make libv8wrap.so
+	# go install
 
-	# 8g example.go
-	# 8l example.go
-	# LD_LIBRARY_PATH=. ./example
+	# cd example
+	# go build example.go
+	# LD_LIBRARY_PATH=.. ./example
