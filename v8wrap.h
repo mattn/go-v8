@@ -2,7 +2,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void v8_init(void* callback);
+extern void v8_init(void*);
 extern void* v8_create();
 extern void v8_release(void* ctx);
 extern char* v8_execute(void* ctx, char* str);

@@ -3,6 +3,18 @@ package v8
 /*
 #include <stdlib.h>
 #include "v8wrap.h"
+
+extern char* _go_v8_callback(unsigned int id, char* n, char* a);
+
+static char*
+_c_v8_callback(unsigned int id, char* n, char* a) {
+	return _go_v8_callback(id, n, a);
+}
+
+static void
+v8_callback_init() {
+	v8_init((void*) _c_v8_callback);
+}
 */
 // #cgo LDFLAGS: -L. -lv8wrap -lstdc++
 import "C"
@@ -22,23 +34,25 @@ function {{.name}}() {
   return _go_call({{.id}}, "{{.name}}", JSON.stringify([].slice.call(arguments)));
 }`))
 
-func init() {
-	var f = func(id uint32, n, a *C.char) *C.char {
-		c := contexts[id]
-		f := c.funcs[C.GoString(n)]
-		if f != nil {
-			var argv []interface{}
-			json.Unmarshal([]byte(C.GoString(a)), &argv)
-			ret := f(argv...)
-			if ret != nil {
-				b, _ := json.Marshal(ret)
-				return C.CString(string(b))
-			}
-			return nil
+//export _go_v8_callback
+func _go_v8_callback(id uint32, n, a *C.char) *C.char {
+	c := contexts[id]
+	f := c.funcs[C.GoString(n)]
+	if f != nil {
+		var argv []interface{}
+		json.Unmarshal([]byte(C.GoString(a)), &argv)
+		ret := f(argv...)
+		if ret != nil {
+			b, _ := json.Marshal(ret)
+			return C.CString(string(b))
 		}
-		return C.CString("undefined")
+		return nil
 	}
-	C.v8_init(*(*unsafe.Pointer)(unsafe.Pointer(&f)))
+	return C.CString("undefined")
+}
+
+func init() {
+	C.v8_callback_init()
 }
 
 type V8Context struct {
@@ -63,6 +77,7 @@ func NewContext() *V8Context {
 func (v *V8Context) Eval(in string) (res interface{}, err error) {
 	ptr := C.CString(in)
 	defer C.free(unsafe.Pointer(ptr))
+	C.v8_callback_init()
 	ret := C.v8_execute(v.v8context, ptr)
 	if ret != nil {
 		out := C.GoString(ret)

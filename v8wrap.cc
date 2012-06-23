@@ -7,8 +7,8 @@
 
 extern "C" {
 
-v8wrap_callback _go_callback = NULL;
-v8::Handle<v8::ObjectTemplate> global;
+static v8wrap_callback _go_callback = NULL;
+static v8::Handle<v8::ObjectTemplate> global;
 
 static std::string
 to_json(v8::Handle<v8::Value> value) {
@@ -44,10 +44,12 @@ _go_call(const v8::Arguments& args) {
   v8::String::Utf8Value name(args[1]);
   v8::String::Utf8Value argv(args[2]);
   v8::HandleScope scope;
-  char* retv = _go_callback(id, *name, *argv);
   v8::Handle<v8::Value> ret = v8::Undefined();
-  if (retv != NULL) ret = from_json(retv);
-  free(retv);
+  char* retv = _go_callback(id, *name, *argv);
+  if (retv != NULL) {
+    ret = from_json("undefined");
+    free(retv);
+  }
   return ret;
 }
 
@@ -147,12 +149,12 @@ v8_execute(void *ctx, char* source) {
     v8::Handle<v8::Value> result = script->Run();
     if (result.IsEmpty()) {
       v8::ThrowException(try_catch.Exception());
-    context->err(report_exception(try_catch));
+      context->err(report_exception(try_catch));
       return NULL;
     }
     else if (result->IsFunction() || result->IsUndefined()) {
       return strdup("");
-  } else {
+    } else {
       return strdup(to_json(result).c_str());
     }
   }
