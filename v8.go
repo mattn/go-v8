@@ -56,16 +56,16 @@ func init() {
 }
 
 type V8Context struct {
-	id uint32
+	id        uint32
 	v8context unsafe.Pointer
-	funcs map[string]func(... interface{}) interface{}
+	funcs     map[string]func(...interface{}) interface{}
 }
 
 func NewContext() *V8Context {
 	v := &V8Context{
 		uint32(len(contexts)),
 		C.v8_create(),
-		make(map[string]func(... interface{}) interface{}),
+		make(map[string]func(...interface{}) interface{}),
 	}
 	contexts[v.id] = v
 	runtime.SetFinalizer(v, func(p *V8Context) {
@@ -100,8 +100,8 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 func (v *V8Context) AddFunc(name string, f func(...interface{}) interface{}) error {
 	v.funcs[name] = f
 	b := bytes.NewBufferString("")
-	tmpl.Execute(b, map[string]interface{} {
-		"id": v.id,
+	tmpl.Execute(b, map[string]interface{}{
+		"id":   v.id,
 		"name": name,
 	})
 	_, err := v.Eval(b.String())

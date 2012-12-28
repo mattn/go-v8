@@ -1,16 +1,27 @@
 WIN32
+	# To Build v8 go package:
 	# make v8wrap.dll
 	# go install
 
+	# To run go-v8 tests:
+	# go test
+
+	# To run example go exec:
 	# cd example
 	# copy v8wrap.dll
 	# go build example.go
 	# ./example
 
 LINUX
+	# To Build v8 go package:
 	# make libv8wrap.so
 	# go install
 
+	# To run go-v8 tests:
+	# LD_LIBRARY_PATH=. go test
+
+	# To run example go exec:
 	# cd example
 	# go build example.go
 	# LD_LIBRARY_PATH=.. ./example
+
