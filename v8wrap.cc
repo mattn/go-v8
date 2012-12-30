@@ -47,7 +47,7 @@ _go_call(const v8::Arguments& args) {
   v8::Handle<v8::Value> ret = v8::Undefined();
   char* retv = _go_callback(id, *name, *argv);
   if (retv != NULL) {
-    ret = from_json("undefined");
+    ret = from_json(retv);
     free(retv);
   }
   return ret;
