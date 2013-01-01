@@ -40,6 +40,7 @@ from_json(std::string str) {
 
 v8::Handle<v8::Value>
 _go_call(const v8::Arguments& args) {
+  v8::Locker v8Locker;
   uint32_t id = args[0]->ToUint32()->Value();
   v8::String::Utf8Value name(args[1]);
   v8::String::Utf8Value argv(args[2]);
@@ -56,6 +57,7 @@ _go_call(const v8::Arguments& args) {
 class V8Context {
 public:
   V8Context() {
+    v8::Locker v8Locker;
     v8::HandleScope scope;
     global = v8::ObjectTemplate::New();
     global->Set(v8::String::New("_go_call"),
@@ -132,6 +134,7 @@ report_exception(v8::TryCatch& try_catch) {
 
 char*
 v8_execute(void *ctx, char* source) {
+  v8::Locker v8Locker;
   V8Context *context = static_cast<V8Context *>(ctx);
   v8::HandleScope scope;
   v8::TryCatch try_catch;
