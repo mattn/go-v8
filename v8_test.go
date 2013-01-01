@@ -1,7 +1,30 @@
 package v8
 
 import (
+	"fmt"
+	"sync"
 	"testing"
+)
+
+var (
+	JS_SIMPLE string = `a = 1; a++;`
+	JS_FIB    string = `function fib(n) {
+			var f = 0,
+				n1 = 1,
+				n2 = 0;
+			if (n <= 1) {
+				return n
+			}
+
+			for (var i = 1; i < n; i++) {
+				f = n1 + n2;
+				n2 = n1;
+				n1 = f;
+
+			}
+			return f;
+		}
+		fib(%d);`
 )
 
 func TestEvalScript(t *testing.T) {
@@ -112,5 +135,59 @@ func TestAddFuncReturnObject(t *testing.T) {
 	arg1 := resMap["arg1"].(string)
 	if arg1 != "something" {
 		t.Fatal("Expected arg1 value to be something got ", arg1)
+	}
+}
+
+func v8EvalRoutine(i int, wg *sync.WaitGroup, t *testing.T) {
+	defer wg.Done()
+
+	ctx := NewContext()
+	res, err := ctx.Eval(fmt.Sprintf(JS_FIB, i))
+	if err != nil {
+		t.Fatal("Failed to evaluate test fib function for index,", i, "error:", err)
+	}
+	if res == nil {
+		t.Fatal("Unexpected nil for result of test fib function for index", i)
+	}
+	r := uint64(res.(float64))
+	if !((i == 80 && r == 23416728348467684) ||
+		(i == 50 && r == 12586269025) ||
+		(i == 20 && r == 6765) ||
+		(i == 60 && r == 1548008755920)) {
+		t.Fatal("Failed to calculate correct fib for index", i, "received value,", r)
+	}
+}
+
+func TestMultiRoutines(t *testing.T) {
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go v8EvalRoutine(80, &wg, t)
+
+	wg.Add(1)
+	go v8EvalRoutine(50, &wg, t)
+
+	wg.Add(1)
+	go v8EvalRoutine(20, &wg, t)
+
+	wg.Add(1)
+	go v8EvalRoutine(60, &wg, t)
+
+	wg.Wait()
+}
+
+func BenchmarkCreateContext(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NewContext()
+	}
+}
+
+func BenchmarkEvalSimple(b *testing.B) {
+	b.StopTimer()
+	ctx := NewContext()
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		ctx.Eval(JS_SIMPLE)
 	}
 }
