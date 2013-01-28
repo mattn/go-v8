@@ -25,3 +25,16 @@ LINUX
 	# go build example.go
 	# LD_LIBRARY_PATH=.. ./example
 
+MAC OS X
+	# To Build v8 go package:
+	# make libv8wrap.so
+	# go install
+
+	# To run go-v8 tests:
+	# DYLD_LIBRARY_PATH=. go test
+
+	# To run example go exec:
+	# cd example
+	# go build example.go
+	# DYLD_LIBRARY_PATH=.. ./example
+
