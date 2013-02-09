@@ -83,7 +83,6 @@ private:
 
 void
 v8_init(void *p) {
-  v8::HandleScope scope;
   __go_callback = (v8wrap_callback) p;
 }
 
