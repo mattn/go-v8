@@ -1,47 +1,87 @@
 package v8
 
 /*
+#cgo LDFLAGS: -L. -lv8wrap -lstdc++
+
 #include <stdlib.h>
 #include "v8wrap.h"
-
-extern char* _go_v8_callback(unsigned int id, char* n, char* a);
-
-static char*
-_c_v8_callback(unsigned int id, char* n, char* a) {
-	return _go_v8_callback(id, n, a);
-}
-
-static void
-v8_callback_init() {
-	v8_init((void*) _c_v8_callback);
-}
 */
-// #cgo LDFLAGS: -L. -lv8wrap -lstdc++
 import "C"
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"runtime"
 	"text/template"
 	"unsafe"
+
+	"github.com/cwc/jsregexp"
 )
 
 var contexts = make(map[uint32]*V8Context)
 
 var tmpl = template.Must(template.New("go-v8").Parse(`
 function {{.name}}() {
-  return _go_call({{.id}}, "{{.name}}", JSON.stringify([].slice.call(arguments)));
+  return _go_call({{.id}}, "{{.name}}", arguments);
 }`))
 
+type V8Function struct {
+	ctx  *V8Context
+	repr string
+}
+
+func (f V8Function) Call(args ...interface{}) (interface{}, error) {
+	var function bytes.Buffer
+
+	function.WriteString("(" + f.repr + ")(")
+
+	for i, arg := range args {
+		s := arg.(string)
+		function.WriteString(s)
+
+		if i != len(args)-1 {
+			function.WriteString(",")
+		}
+	}
+
+	function.WriteString(")")
+
+	return f.ctx.Eval(function.String())
+}
+
+func (f V8Function) String() string {
+	return f.repr
+}
+
 //export _go_v8_callback
-func _go_v8_callback(id uint32, n, a *C.char) *C.char {
-	c := contexts[id]
-	f := c.funcs[C.GoString(n)]
-	if f != nil {
+func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data, count C.int) *C.char {
+	ctx := contexts[contextId]
+	fn := ctx.funcs[C.GoString(functionName)]
+
+	if fn != nil {
 		var argv []interface{}
-		json.Unmarshal([]byte(C.GoString(a)), &argv)
-		ret := f(argv...)
+
+		// Parse objects
+		i := C.int(0)
+		for ; i < count; i++ {
+			obj := C.v8_get_array_item(v8Objects, i)
+
+			switch obj.obj_type {
+			case C.v8regexp:
+				argv = append(argv, regexp.MustCompile(jsregexp.Translate(C.GoString(obj.repr))))
+				break
+			case C.v8function:
+				argv = append(argv, V8Function{ctx, C.GoString(obj.repr)})
+				break
+			default:
+				// Should be a JSON string, so pass it as-is
+				argv = append(argv, C.GoString(obj.repr))
+			}
+		}
+
+		// Call function
+		ret := fn(argv...)
 		if ret != nil {
 			b, _ := json.Marshal(ret)
 			return C.CString(string(b))
@@ -49,10 +89,6 @@ func _go_v8_callback(id uint32, n, a *C.char) *C.char {
 		return nil
 	}
 	return C.CString("undefined")
-}
-
-func init() {
-	C.v8_callback_init()
 }
 
 type V8Context struct {
@@ -77,7 +113,6 @@ func NewContext() *V8Context {
 func (v *V8Context) Eval(in string) (res interface{}, err error) {
 	ptr := C.CString(in)
 	defer C.free(unsafe.Pointer(ptr))
-	C.v8_callback_init()
 	ret := C.v8_execute(v.v8context, ptr)
 	if ret != nil {
 		out := C.GoString(ret)

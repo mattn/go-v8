@@ -7,8 +7,6 @@
 
 extern "C" {
 
-static volatile v8wrap_callback __go_callback = NULL;
-
 static std::string
 to_json(v8::Handle<v8::Value> value) {
   v8::HandleScope scope;
@@ -28,6 +26,7 @@ v8::Handle<v8::Value>
 from_json(std::string str) {
   v8::HandleScope scope;
   v8::TryCatch try_catch;
+
   v8::Handle<v8::Object> json = v8::Handle<v8::Object>::Cast(
     v8::Context::GetCurrent()->Global()->Get(v8::String::New("JSON")));
   v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(
@@ -37,15 +36,52 @@ from_json(std::string str) {
   return func->Call(v8::Context::GetCurrent()->Global(), 1, args);
 }
 
+v8data
+v8_get_array_item(v8data* array, int index) {
+  return array[index];
+}
+
 v8::Handle<v8::Value>
 _go_call(const v8::Arguments& args) {
   v8::Locker v8Locker;
   uint32_t id = args[0]->ToUint32()->Value();
   v8::String::Utf8Value name(args[1]);
-  v8::String::Utf8Value argv(args[2]);
+
+  // Parse arguments
+  v8::Array* realArgs = v8::Array::Cast(*args[2]);
+  v8data* data = (v8data*) malloc(sizeof(v8data) * realArgs->Length());
+
+  for (int i = 0; i < realArgs->Length(); i++) {
+    v8::Local<v8::Value> arg = realArgs->Get(i);
+
+    if (arg->IsRegExp()) {
+      data[i].obj_type = v8regexp;
+
+      v8::String::Utf8Value argString(arg);
+      data[i].repr = strdup(*argString);
+    } else if (arg->IsFunction()) {
+      data[i].obj_type = v8function;
+
+      v8::String::Utf8Value argString(arg);
+      data[i].repr = strdup(*argString);
+    } else {
+      // Convert to JSON
+      data[i].obj_type = v8string;
+      data[i].repr = strdup(to_json(arg).c_str());
+    }
+  }
+
   v8::TryCatch try_catch;
   char* retv;
-  retv = __go_callback(id, *name, *argv);
+  retv = _go_v8_callback(id, *name, data, realArgs->Length());
+
+  // Free args memory
+  for (int i = 0; i < realArgs->Length(); i++) {
+      free(data[i].repr);
+  }
+
+  free(data);
+
   if (retv != NULL) {
     v8::Handle<v8::Value> ret = from_json(retv);
     free(retv);
@@ -80,11 +116,6 @@ private:
   v8::HandleScope handle_scope_;
   std::string err_;
 };
-
-void
-v8_init(void *p) {
-  __go_callback = (v8wrap_callback) p;
-}
 
 void*
 v8_create() {

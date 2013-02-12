@@ -8,8 +8,9 @@ clean:
 	rm -f *.dll
 else
 libv8wrap.so : v8wrap.cc v8.go
-	g++ -fPIC -shared -o libv8wrap.so -I. v8wrap.cc -lv8_base -lv8_snapshot
+	g++ -fPIC -shared -o libv8wrap.so -I. v8wrap.cc -lv8
 	go build .
+	go install
 
 clean:
 	rm -f *.so
