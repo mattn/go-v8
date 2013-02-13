@@ -44,11 +44,16 @@ type V8Function struct {
 	repr string
 }
 
+type V8Object struct {
+	Name string
+}
+
 func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 	var arguments bytes.Buffer
 	for i, arg := range args {
 		fn, ok := arg.(func(...interface{}) interface{})
 		if ok {
+			// arg is a Go func
 			name := fmt.Sprintf("anonymous%v", fn)
 			f.ctx.funcs[name] = fn
 			buf := bytes.NewBufferString("")
@@ -58,16 +63,24 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 			})
 			arguments.WriteString("(" + buf.String() + ")")
 		} else {
-			b, err := json.Marshal(arg)
-			if err != nil {
-				return nil, err
+			obj, ok := arg.(V8Object)
+			if ok {
+				// arg is a JavaScript object
+				arguments.WriteString(obj.Name)
+			} else {
+				// arg is a Go object; marshal to JSON
+				b, err := json.Marshal(arg)
+				if err != nil {
+					return nil, err
+				}
+				arguments.WriteString(string(b))
 			}
-			arguments.WriteString(string(b))
 		}
 		if i != len(args)-1 {
 			arguments.WriteString(",")
 		}
 	}
+
 	return f.ctx.Eval("(" + f.repr + ")(" + arguments.String() + ")")
 }
 
