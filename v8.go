@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"regexp"
 	"runtime"
 	"text/template"
@@ -44,11 +45,30 @@ type V8Function struct {
 }
 
 func (f V8Function) Call(args ...interface{}) (interface{}, error) {
-	b, err := json.Marshal(args)
-	if err == nil {
-		return f.ctx.Eval("(" + f.repr + ")(" + string(b[1:len(b)-1]) + ")")
+	var arguments bytes.Buffer
+	for i, arg := range args {
+		fn, ok := arg.(func(...interface{}) interface{})
+		if ok {
+			name := fmt.Sprintf("anonymous%v", fn)
+			f.ctx.funcs[name] = fn
+			buf := bytes.NewBufferString("")
+			tmpl.Execute(buf, map[string]interface{}{
+				"id":   f.ctx.id,
+				"name": name,
+			})
+			arguments.WriteString("(" + buf.String() + ")")
+		} else {
+			b, err := json.Marshal(arg)
+			if err != nil {
+				return nil, err
+			}
+			arguments.WriteString(string(b))
+		}
+		if i != len(args)-1 {
+			arguments.WriteString(",")
+		}
 	}
-	return nil, err
+	return f.ctx.Eval("(" + f.repr + ")(" + arguments.String() + ")")
 }
 
 func (f V8Function) String() string {
