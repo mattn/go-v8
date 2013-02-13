@@ -44,22 +44,11 @@ type V8Function struct {
 }
 
 func (f V8Function) Call(args ...interface{}) (interface{}, error) {
-	var function bytes.Buffer
-
-	function.WriteString("(" + f.repr + ")(")
-
-	for i, arg := range args {
-		s := arg.(string)
-		function.WriteString(s)
-
-		if i != len(args)-1 {
-			function.WriteString(",")
-		}
+	b, err := json.Marshal(args)
+	if err == nil {
+		return f.ctx.Eval("(" + f.repr + ")(" + string(b[1:len(b)-1]) + ")")
 	}
-
-	function.WriteString(")")
-
-	return f.ctx.Eval(function.String())
+	return nil, err
 }
 
 func (f V8Function) String() string {

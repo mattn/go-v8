@@ -32,13 +32,13 @@ func main() {
 	v8ctx.Eval(`console.log("Hello World, こんにちわ世界")`)                    // john
 
 	v8ctx.AddFunc("func_call", func(args ...interface{}) interface{} {
-		ret, _ := args[0].(v8.V8Function).Call("\"Golang\"")
+		ret, _ := args[0].(v8.V8Function).Call("Golang", 1, 2)
 		return ret
 	})
 
 	fmt.Println(v8ctx.MustEval(`
 	func_call(function() {
-		return "hello " + arguments[0];
+		return "hello " + arguments[0] + (arguments[1] + arguments[2]);
 	})
 	`).(string))
 }
