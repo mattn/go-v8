@@ -126,6 +126,14 @@ func NewContext() *V8Context {
 	return v
 }
 
+func (v *V8Context) MustEval(in string) (res interface{}) {
+	res, err := v.Eval(in)
+	if err != nil {
+		panic(err.Error())
+	}
+	return
+}
+
 func (v *V8Context) Eval(in string) (res interface{}, err error) {
 	ptr := C.CString(in)
 	defer C.free(unsafe.Pointer(ptr))
