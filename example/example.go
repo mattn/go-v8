@@ -20,7 +20,7 @@ func main() {
 		return ""
 	})
 
-	ret, _ := v8ctx.Eval(`
+	ret := v8ctx.MustEval(`
 	var a = 1;
 	var b = 'B'
 	a += 2;
@@ -30,4 +30,15 @@ func main() {
 
 	v8ctx.Eval(`console.log(a + '年' + b + '組 金八先生！', 'something else')`) // 3b
 	v8ctx.Eval(`console.log("Hello World, こんにちわ世界")`)                    // john
+
+	v8ctx.AddFunc("func_call", func(args ...interface{}) interface{} {
+		ret, _ := args[0].(v8.V8Function).Call("\"Golang\"")
+		return ret
+	})
+
+	fmt.Println(v8ctx.MustEval(`
+	func_call(function() {
+		return "hello " + arguments[0];
+	})
+	`).(string))
 }
