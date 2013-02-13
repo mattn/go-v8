@@ -7,6 +7,8 @@
 
 extern "C" {
 
+static volatile v8wrap_callback ___go_v8_callback = NULL;
+
 static std::string
 to_json(v8::Handle<v8::Value> value) {
   v8::HandleScope scope;
@@ -73,7 +75,7 @@ _go_call(const v8::Arguments& args) {
 
   v8::TryCatch try_catch;
   char* retv;
-  retv = _go_v8_callback(id, *name, data, realArgs->Length());
+  retv = ___go_v8_callback(id, *name, data, realArgs->Length());
 
   // Free args memory
   for (int i = 0; i < realArgs->Length(); i++) {
@@ -116,6 +118,11 @@ private:
   v8::HandleScope handle_scope_;
   std::string err_;
 };
+
+void
+v8_init(void *p) {
+  ___go_v8_callback = (v8wrap_callback) p;
+}
 
 void*
 v8_create() {

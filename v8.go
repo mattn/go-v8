@@ -5,6 +5,18 @@ package v8
 
 #include <stdlib.h>
 #include "v8wrap.h"
+
+extern char* _go_v8_callback(unsigned int, char*, v8data*, int);
+
+static char*
+_c_v8_callback(unsigned int id, char* n, v8data* d, int a) {
+  return _go_v8_callback(id, n, d, a);
+}
+
+static void
+v8_callback_init() {
+  v8_init((void*) _c_v8_callback);
+}
 */
 import "C"
 import (
@@ -89,6 +101,10 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 		return nil
 	}
 	return C.CString("undefined")
+}
+
+func init() {
+  C.v8_callback_init()
 }
 
 type V8Context struct {

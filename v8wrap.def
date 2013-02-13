@@ -5,3 +5,4 @@ v8_create
 v8_execute
 v8_release
 v8_error
+v8_get_array_item

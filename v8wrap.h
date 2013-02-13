@@ -20,7 +20,7 @@ typedef struct {
   char* repr; // String representation of object
 } v8data;
 
-extern char* _go_v8_callback(unsigned int contextId, char* functionName, v8data* v8Objects, int count);
+typedef char* (*v8wrap_callback)(unsigned int, char*, v8data*, int);
 
 extern v8data v8_get_array_item(v8data* array, int index);
 
