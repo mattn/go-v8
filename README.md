@@ -1,4 +1,16 @@
+go-v8
+=====
+
+WHATS:
+------
+
+  Go bindings for V8
+
+INSTALL:
+--------
+
 WIN32
+
 	# To Build v8 go package:
 	# make v8wrap.dll
 	# go install
@@ -13,6 +25,7 @@ WIN32
 	# ./example
 
 LINUX
+
 	# To Build v8 go package:
 	# make libv8wrap.so
 	# go install
@@ -26,6 +39,7 @@ LINUX
 	# LD_LIBRARY_PATH=.. ./example
 
 MAC OS X
+
 	# To Build v8 go package:
 	# make libv8wrap.so
 	# go install
@@ -38,3 +52,12 @@ MAC OS X
 	# go build example.go
 	# DYLD_LIBRARY_PATH=.. ./example
 
+LICENSE:
+--------
+
+  under the MIT License: http://mattn.mit-license.org/2013
+
+AUTHOR:
+-------
+
+  * Yasuhiro Matsumoto
