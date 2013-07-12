@@ -103,7 +103,7 @@ _go_call(const v8::Arguments& args) {
 
 class V8Context {
 public:
-  V8Context() {
+  V8Context() : err_("") {
     v8::Locker v8Locker;
     v8::HandleScope scope;
     global_ = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
@@ -111,7 +111,6 @@ public:
       v8::FunctionTemplate::New(_go_call));
     v8::Handle<v8::Context> context = v8::Context::New(NULL, global_);
     context_ = v8::Persistent<v8::Context>::New(context);
-    err_ = "";
   };
 
   virtual ~V8Context() {
