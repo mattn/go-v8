@@ -92,13 +92,14 @@ func TestAddFuncReturnObject(t *testing.T) {
 		return map[string]interface{}{
 			"arg0": args[0].(float64),
 			"arg1": args[1].(string),
+			"arg2": args[2].(bool),
 		}
 	})
 	if err != nil {
 		t.Fatal("Expected to be able to add function, received error ", err)
 	}
 
-	res, err := ctx.Eval(`testFunc(10, "something").arg0`)
+	res, err := ctx.Eval(`testFunc(10, "something", true).arg0`)
 	if err != nil {
 		t.Fatal("Unexpected error on testFunc eval ", err)
 	}
@@ -109,7 +110,7 @@ func TestAddFuncReturnObject(t *testing.T) {
 		t.Fatal("Expected result to be 10, got", res)
 	}
 
-	res, err = ctx.Eval(`testFunc(10, "something")`)
+	res, err = ctx.Eval(`testFunc(10, "something", false)`)
 	if err != nil {
 		t.Fatal("Unexpected error on testFunc eval ", err)
 	}
@@ -124,6 +125,10 @@ func TestAddFuncReturnObject(t *testing.T) {
 	arg1 := resMap["arg1"].(string)
 	if arg1 != "something" {
 		t.Fatal("Expected arg1 value to be something got ", arg1)
+	}
+	arg2 := resMap["arg2"].(bool)
+	if arg2 != false {
+		t.Fatal("Expected arg2 value to be false got ", arg1)
 	}
 }
 
