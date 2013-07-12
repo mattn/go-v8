@@ -126,7 +126,7 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 }
 
 func init() {
-  C.v8_callback_init()
+	C.v8_callback_init()
 }
 
 type V8Context struct {

@@ -1,6 +1,7 @@
 package v8
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
@@ -56,26 +57,20 @@ func TestAddFunc(t *testing.T) {
 			t.Fatal("Unexpected number of _gov8_testFunc's arguments.", len(args))
 		}
 		// First argument
-		arg := args[0]
-		switch arg.(type) {
-		case float64:
-		default:
-			t.Fatal("Unexpected arg 0 type, expecting float64")
+		var num float64
+		err := json.Unmarshal([]byte(args[0].(string)), &num)
+		if err != nil {
+			t.Fatal("Error unmarshalling arg 0", err)
 		}
-		argVal := int(arg.(float64))
+
+		argVal := int(num)
 		if argVal != 10 {
 			t.Fatal("Unexpected value for arg 0, expected 10, received:", argVal)
 		}
 
 		// Second argument
-		arg = args[1]
-		switch arg.(type) {
-		case string:
-		default:
-			t.Fatal("Unexpected arg 1 type, expected string")
-		}
-		argVal2 := arg.(string)
-		if argVal2 != "Test string" {
+		argVal2 := args[1].(string)
+		if argVal2 != `"Test string"` {
 			t.Fatal("Unexpected value for arg 1, expected Test string, received:", argVal2)
 		}
 
@@ -100,9 +95,21 @@ func TestAddFunc(t *testing.T) {
 func TestAddFuncReturnObject(t *testing.T) {
 	ctx := NewContext()
 	err := ctx.AddFunc("testFunc", func(args ...interface{}) interface{} {
+		var arg0 float64
+		err := json.Unmarshal([]byte(args[0].(string)), &arg0)
+		if err != nil {
+			t.Fatal("Error unmarshalling arg 0", err)
+		}
+
+		var arg1 string
+		err = json.Unmarshal([]byte(args[1].(string)), &arg1)
+		if err != nil {
+			t.Fatal("Error unmarshalling arg 1", err)
+		}
+
 		return map[string]interface{}{
-			"arg0": int(args[0].(float64)),
-			"arg1": args[1].(string),
+			"arg0": arg0,
+			"arg1": arg1,
 		}
 	})
 	if err != nil {
