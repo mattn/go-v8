@@ -7,6 +7,15 @@
 
 extern "C" {
 
+char*
+__strdup(const char* ptr) {
+  int l = strlen(ptr);
+  //char* p = (char*) malloc(l + 1);
+  char* p = new char[l + 1];
+  strcpy(p, ptr);
+  return p;
+}
+
 static volatile v8wrap_callback ___go_v8_callback = NULL;
 
 static std::string
@@ -60,16 +69,16 @@ _go_call(const v8::Arguments& args) {
       data[i].obj_type = v8regexp;
 
       v8::String::Utf8Value argString(arg);
-      data[i].repr = strdup(*argString);
+      data[i].repr = __strdup(*argString);
     } else if (arg->IsFunction()) {
       data[i].obj_type = v8function;
 
       v8::String::Utf8Value argString(arg);
-      data[i].repr = strdup(*argString);
+      data[i].repr = __strdup(*argString);
     } else {
       // Convert to JSON
       data[i].obj_type = v8string;
-      data[i].repr = strdup(to_json(arg).c_str());
+      data[i].repr = __strdup(to_json(arg).c_str());
     }
   }
 
@@ -102,6 +111,7 @@ public:
       v8::FunctionTemplate::New(_go_call));
     v8::Handle<v8::Context> context = v8::Context::New(NULL, global_);
     context_ = v8::Persistent<v8::Context>::New(context);
+    err_ = "";
   };
 
   virtual ~V8Context() {
@@ -109,8 +119,8 @@ public:
     global_.Dispose();
   };
   v8::Handle<v8::Context> context() { return context_; };
-  std::string err() const { return err_; };
-  void err(const std::string err) { this->err_ = err; }
+  const char* err() const { return err_.c_str(); };
+  void err(const char* e) { this->err_ = std::string(e); }
 
 private:
   v8::Persistent<v8::ObjectTemplate> global_;
@@ -136,7 +146,7 @@ v8_release(void* ctx) {
 char*
 v8_error(void* ctx) {
   V8Context *context = static_cast<V8Context *>(ctx);
-  return strdup(context->err().c_str());
+  return __strdup(context->err());
 }
 
 static std::string
@@ -188,19 +198,19 @@ v8_execute(void *ctx, char* source) {
     = v8::Script::Compile(v8::String::New(source), v8::Undefined());
   if (script.IsEmpty()) {
     v8::ThrowException(try_catch.Exception());
-    context->err(report_exception(try_catch));
+    context->err(report_exception(try_catch).c_str());
     return NULL;
   } else {
     v8::Handle<v8::Value> result = script->Run();
     if (result.IsEmpty()) {
       v8::ThrowException(try_catch.Exception());
-      context->err(report_exception(try_catch));
+      context->err(report_exception(try_catch).c_str());
       return NULL;
     }
     else if (result->IsFunction() || result->IsUndefined()) {
-      return strdup("");
+      return __strdup("");
     } else {
-      return strdup(to_json(result).c_str());
+      return __strdup(to_json(result).c_str());
     }
   }
 }
