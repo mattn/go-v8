@@ -115,7 +115,6 @@ public:
 private:
   v8::Persistent<v8::ObjectTemplate> global_;
   v8::Persistent<v8::Context> context_;
-  v8::HandleScope handle_scope_;
   std::string err_;
 };
 
