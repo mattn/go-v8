@@ -80,7 +80,7 @@ _go_call(const v8::Arguments& args) {
       data[i].repr = __strdup(*argString);
     } else {
       data[i].obj_type = v8string;
-      data[i].repr = __strdup(*argString);
+      data[i].repr = __strdup(to_json(arg).c_str());
     }
   }
 
