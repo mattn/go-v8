@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"regexp"
 	"runtime"
+	"strconv"
 	"text/template"
 	"unsafe"
 
@@ -63,17 +64,18 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 			})
 			arguments.WriteString("(" + buf.String() + ")")
 		} else {
-			obj, ok := arg.(V8Object)
-			if ok {
-				// arg is a JavaScript object
+			if obj, ok := arg.(V8Object); ok {
 				arguments.WriteString(obj.Name)
-			} else {
-				// arg is a Go object; marshal to JSON
-				b, err := json.Marshal(arg)
-				if err != nil {
-					return nil, err
+			} else if num, ok := arg.(float64); ok {
+				arguments.WriteString(fmt.Sprintf("%v", num))
+			} else if bln, ok := arg.(bool); ok {
+				if bln  {
+					arguments.WriteString("true")
+				} else {
+					arguments.WriteString("false")
 				}
-				arguments.WriteString(string(b))
+			} else if str, ok := arg.(string); ok {
+				arguments.WriteString(str)
 			}
 		}
 		if i != len(args)-1 {
@@ -107,6 +109,23 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 				break
 			case C.v8function:
 				argv = append(argv, V8Function{ctx, C.GoString(obj.repr)})
+				break
+			case C.v8number:
+				if f, err := strconv.ParseFloat(C.GoString(obj.repr), 64); err == nil {
+					argv = append(argv, f)
+				} else {
+					argv = append(argv, 0.0)
+				}
+				break
+			case C.v8string:
+				argv = append(argv, C.GoString(obj.repr))
+				break
+			case C.v8boolean:
+				if C.GoString(obj.repr) == "true" {
+					argv = append(argv, true)
+				} else {
+					argv = append(argv, false)
+				}
 				break
 			default:
 				// Should be a JSON string, so pass it as-is

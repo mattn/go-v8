@@ -12,7 +12,7 @@ extern char* v8_execute(void* ctx, char* str);
 extern char* v8_error(void* ctx);
 
 typedef enum {
-  v8regexp, v8string, v8function
+  v8boolean, v8number, v8string, v8function, v8regexp
 } v8type;
 
 typedef struct {

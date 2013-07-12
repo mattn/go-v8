@@ -65,20 +65,22 @@ _go_call(const v8::Arguments& args) {
   for (int i = 0; i < realArgs->Length(); i++) {
     v8::Local<v8::Value> arg = realArgs->Get(i);
 
+    v8::String::Utf8Value argString(arg);
     if (arg->IsRegExp()) {
       data[i].obj_type = v8regexp;
-
-      v8::String::Utf8Value argString(arg);
       data[i].repr = __strdup(*argString);
     } else if (arg->IsFunction()) {
       data[i].obj_type = v8function;
-
-      v8::String::Utf8Value argString(arg);
+      data[i].repr = __strdup(*argString);
+    } else if (arg->IsNumber()) {
+      data[i].obj_type = v8number;
+      data[i].repr = __strdup(*argString);
+    } else if (arg->IsBoolean()) {
+      data[i].obj_type = v8boolean;
       data[i].repr = __strdup(*argString);
     } else {
-      // Convert to JSON
       data[i].obj_type = v8string;
-      data[i].repr = __strdup(to_json(arg).c_str());
+      data[i].repr = __strdup(*argString);
     }
   }
 
