@@ -64,7 +64,7 @@ func TestAddFunc(t *testing.T) {
 
 		// Second argument
 		argVal2 := args[1].(string)
-		if argVal2 != `Test string` {
+		if argVal2 != `"Test string"` {
 			t.Fatal("Unexpected value for arg 1, expected Test string, received:", argVal2)
 		}
 
@@ -123,7 +123,7 @@ func TestAddFuncReturnObject(t *testing.T) {
 		t.Fatal("Expected arg0 value to be 10 got ", arg0)
 	}
 	arg1 := resMap["arg1"].(string)
-	if arg1 != "something" {
+	if arg1 != `"something"` {
 		t.Fatal("Expected arg1 value to be something got ", arg1)
 	}
 	arg2 := resMap["arg2"].(bool)
