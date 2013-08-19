@@ -69,7 +69,7 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 			} else if num, ok := arg.(float64); ok {
 				arguments.WriteString(fmt.Sprintf("%v", num))
 			} else if bln, ok := arg.(bool); ok {
-				if bln  {
+				if bln {
 					arguments.WriteString("true")
 				} else {
 					arguments.WriteString("false")
@@ -119,6 +119,16 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 				break
 			case C.v8string:
 				argv = append(argv, C.GoString(obj.repr))
+				break
+			case C.v8array:
+				var a []interface{}
+				json.Unmarshal([]byte(C.GoString(obj.repr)), &a)
+				argv = append(argv, a)
+				break
+			case C.v8object:
+				var m map[string]interface{}
+				json.Unmarshal([]byte(C.GoString(obj.repr)), &m)
+				argv = append(argv, m)
 				break
 			case C.v8boolean:
 				if C.GoString(obj.repr) == "true" {

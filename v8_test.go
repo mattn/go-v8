@@ -86,6 +86,66 @@ func TestAddFunc(t *testing.T) {
 	}
 }
 
+func TestEvalScriptMap(t *testing.T) {
+	ctx := NewContext()
+
+	res, err := ctx.Eval(`var a = {"foo": "bar"}; a`)
+	if err != nil {
+		t.Fatal("Unexpected error on eval,", err)
+	}
+	if res == nil {
+		t.Fatal("Expected result from eval, received nil")
+	}
+
+	v, ok := res.(map[string]interface{})
+	if !ok {
+		t.Fatal("Expected map, but not:", res)
+	}
+
+	r, ok := v["foo"].(string)
+	if !ok {
+		t.Fatal("Expected string, but %q", res)
+	}
+
+	if r != "bar" {
+		t.Fatalf("Expected %q, but %q", "bar", r)
+	}
+}
+
+func TestEvalScriptArray(t *testing.T) {
+	ctx := NewContext()
+
+	res, err := ctx.Eval(`var a = ["foo", true]; a`)
+	if err != nil {
+		t.Fatal("Unexpected error on eval,", err)
+	}
+	if res == nil {
+		t.Fatal("Expected result from eval, received nil")
+	}
+
+	v, ok := res.([]interface{})
+	if !ok {
+		t.Fatal("Expected array, but not:", res)
+	}
+
+	if len(v) != 2 {
+		t.Fatalf("Expected two elements, but %d elements", len(v))
+	}
+
+	e1, ok := v[0].(string)
+	if !ok {
+		t.Fatal("Expected a[0] is string, but not")
+	}
+	e2, ok := v[1].(bool)
+	if !ok {
+		t.Fatal("Expected a[1] is boolean, but not")
+	}
+
+	if e1 != "foo" || e2 != true {
+		t.Fatal(`Expected a[0]=="foo", a[1]==true but not`)
+	}
+}
+
 func TestAddFuncReturnObject(t *testing.T) {
 	ctx := NewContext()
 	err := ctx.AddFunc("testFunc", func(args ...interface{}) interface{} {
