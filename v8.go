@@ -64,18 +64,10 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 			})
 			arguments.WriteString("(" + buf.String() + ")")
 		} else {
-			if obj, ok := arg.(V8Object); ok {
-				arguments.WriteString(obj.Name)
-			} else if num, ok := arg.(float64); ok {
-				arguments.WriteString(fmt.Sprintf("%v", num))
-			} else if bln, ok := arg.(bool); ok {
-				if bln {
-					arguments.WriteString("true")
-				} else {
-					arguments.WriteString("false")
-				}
-			} else if str, ok := arg.(string); ok {
-				arguments.WriteString(str)
+			if v8obj, ok := arg.(V8Object); ok {
+				arguments.WriteString(v8obj.Name)
+			} else {
+				json.NewEncoder(&arguments).Encode(arg)
 			}
 		}
 		if i != len(args)-1 {
