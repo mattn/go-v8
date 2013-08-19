@@ -40,6 +40,8 @@ function {{.name}}() {
   return _go_call({{.id}}, "{{.name}}", arguments);
 }`))
 
+type GoFunc func(...interface{}) (interface{}, error)
+
 type V8Function struct {
 	ctx  *V8Context
 	repr string
@@ -52,7 +54,7 @@ type V8NamedObject struct {
 func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 	var arguments bytes.Buffer
 	for i, arg := range args {
-		fn, ok := arg.(func(...interface{}) interface{})
+		fn, ok := arg.(func(...interface{}) (interface{}, error))
 		if ok {
 			// arg is a Go func
 			name := fmt.Sprintf("anonymous%v", fn)
@@ -138,8 +140,10 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 		}
 
 		// Call function
-		ret := fn(argv...)
-		if ret != nil {
+		ret, err := fn(argv...)
+		if err != nil {
+			return nil
+		} else if ret != nil {
 			b, _ := json.Marshal(ret)
 			return C.CString(string(b))
 		}
@@ -155,14 +159,14 @@ func init() {
 type V8Context struct {
 	id        uint32
 	v8context unsafe.Pointer
-	funcs     map[string]func(...interface{}) interface{}
+	funcs     map[string]func(...interface{}) (interface{}, error)
 }
 
 func NewContext() *V8Context {
 	v := &V8Context{
 		uint32(len(contexts)),
 		C.v8_create(),
-		make(map[string]func(...interface{}) interface{}),
+		make(map[string]func(...interface{}) (interface{}, error)),
 	}
 	contexts[v.id] = v
 	runtime.SetFinalizer(v, func(p *V8Context) {
@@ -187,7 +191,13 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 		out := C.GoString(ret)
 		if out != "" {
 			C.free(unsafe.Pointer(ret))
-			if len(out) >= 2 && out[0] == '/' && out[len(out)-1] == '/' {
+			if len(out) >= 14 && out[:13] == "function () {" && out[len(out)-1] == '}' {
+				name := fmt.Sprintf("anonymous%v", &out)
+				v.funcs[name] = func(args ...interface{}) (interface{}, error) {
+					return (V8Function{v, out}).Call(args...)
+				}
+				return v.funcs[name], nil
+			} else if len(out) >= 2 && out[0] == '/' && out[len(out)-1] == '/' {
 				res, err = regexp.Compile(jsregexp.Translate(out))
 			} else {
 				var buf bytes.Buffer
@@ -205,7 +215,7 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 	return nil, errors.New(out)
 }
 
-func (v *V8Context) AddFunc(name string, f func(...interface{}) interface{}) error {
+func (v *V8Context) AddFunc(name string, f func(...interface{}) (interface{}, error)) error {
 	v.funcs[name] = f
 	b := bytes.NewBufferString("")
 	tmpl.Execute(b, map[string]interface{}{

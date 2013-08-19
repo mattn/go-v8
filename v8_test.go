@@ -52,7 +52,7 @@ func TestEvalScript(t *testing.T) {
 func TestAddFunc(t *testing.T) {
 	ctx := NewContext()
 
-	err := ctx.AddFunc("_gov8_testFunc", func(args ...interface{}) interface{} {
+	err := ctx.AddFunc("_gov8_testFunc", func(args ...interface{}) (interface{}, error) {
 		if len(args) != 2 {
 			t.Fatal("Unexpected number of _gov8_testFunc's arguments.", len(args))
 		}
@@ -69,7 +69,7 @@ func TestAddFunc(t *testing.T) {
 			t.Fatal("Unexpected value for arg 1, expected Test string, received:", argVal2)
 		}
 
-		return "testFunc return value"
+		return "testFunc return value", nil
 	})
 	if err != nil {
 		t.Fatal("Expected to be able to add function, received error ", err)
@@ -169,12 +169,12 @@ func TestEvalScriptRegExp(t *testing.T) {
 
 func TestAddFuncReturnObject(t *testing.T) {
 	ctx := NewContext()
-	err := ctx.AddFunc("testFunc", func(args ...interface{}) interface{} {
+	err := ctx.AddFunc("testFunc", func(args ...interface{}) (interface{}, error) {
 		return map[string]interface{}{
 			"arg0": args[0].(float64),
 			"arg1": args[1].(string),
 			"arg2": args[2].(bool),
-		}
+		}, nil
 	})
 	if err != nil {
 		t.Fatal("Expected to be able to add function, received error ", err)

@@ -215,9 +215,12 @@ v8_execute(void *ctx, char* source) {
       v8::ThrowException(try_catch.Exception());
       context->err(report_exception(try_catch).c_str());
       return NULL;
-    }
-    else if (result->IsFunction() || result->IsUndefined()) {
+    } else if (result->IsUndefined()) {
       return __strdup("");
+    } else if (result->IsFunction()) {
+      v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(result);
+      v8::String::Utf8Value ret(func->ToString());
+      return __strdup(*ret);
     } else if (result->IsRegExp()) {
       v8::Handle<v8::RegExp> re = v8::Handle<v8::RegExp>::Cast(result);
       v8::String::Utf8Value ret(re->ToString());
