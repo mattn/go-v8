@@ -45,7 +45,7 @@ type V8Function struct {
 	repr string
 }
 
-type V8Object struct {
+type V8NamedObject struct {
 	Name string
 }
 
@@ -64,7 +64,7 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 			})
 			arguments.WriteString("(" + buf.String() + ")")
 		} else {
-			if v8obj, ok := arg.(V8Object); ok {
+			if v8obj, ok := arg.(V8NamedObject); ok {
 				arguments.WriteString(v8obj.Name)
 			} else {
 				json.NewEncoder(&arguments).Encode(arg)
