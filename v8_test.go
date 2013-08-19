@@ -2,6 +2,7 @@ package v8
 
 import (
 	"fmt"
+	"regexp"
 	"sync"
 	"testing"
 )
@@ -143,6 +144,26 @@ func TestEvalScriptArray(t *testing.T) {
 
 	if e1 != "foo" || e2 != true {
 		t.Fatal(`Expected a[0]=="foo", a[1]==true but not`)
+	}
+}
+
+func TestEvalScriptRegExp(t *testing.T) {
+	ctx := NewContext()
+
+	res, err := ctx.Eval(`var a = /^[a-z][0-9]+$/; a`)
+	if err != nil {
+		t.Fatal("Unexpected error on eval,", err)
+	}
+	if res == nil {
+		t.Fatal("Expected result from eval, received nil")
+	}
+
+	v, ok := res.(*regexp.Regexp)
+	if !ok {
+		t.Fatal("Expected regexp, but not:", res)
+	}
+	if !v.MatchString("a123") {
+		t.Fatal(`Expected /^[a-z][0-9]+$/i match "a123", but not:`, v)
 	}
 }
 

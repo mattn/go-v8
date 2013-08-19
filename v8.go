@@ -66,6 +66,8 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 		} else {
 			if v8obj, ok := arg.(V8NamedObject); ok {
 				arguments.WriteString(v8obj.Name)
+			} else if re, ok := arg.(*regexp.Regexp); ok {
+				arguments.WriteString(re.String())
 			} else {
 				json.NewEncoder(&arguments).Encode(arg)
 			}
@@ -185,10 +187,14 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 		out := C.GoString(ret)
 		if out != "" {
 			C.free(unsafe.Pointer(ret))
-			var buf bytes.Buffer
-			buf.Write([]byte(out))
-			dec := json.NewDecoder(&buf)
-			err = dec.Decode(&res)
+			if len(out) >= 2 && out[0] == '/' && out[len(out)-1] == '/' {
+				res, err = regexp.Compile(jsregexp.Translate(out))
+			} else {
+				var buf bytes.Buffer
+				buf.Write([]byte(out))
+				dec := json.NewDecoder(&buf)
+				err = dec.Decode(&res)
+			}
 			return
 		}
 		return nil, nil

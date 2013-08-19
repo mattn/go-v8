@@ -10,7 +10,6 @@ extern "C" {
 char*
 __strdup(const char* ptr) {
   int l = strlen(ptr);
-  //char* p = (char*) malloc(l + 1);
   char* p = new char[l + 1];
   strcpy(p, ptr);
   return p;
@@ -219,6 +218,10 @@ v8_execute(void *ctx, char* source) {
     }
     else if (result->IsFunction() || result->IsUndefined()) {
       return __strdup("");
+    } else if (result->IsRegExp()) {
+      v8::Handle<v8::RegExp> re = v8::Handle<v8::RegExp>::Cast(result);
+      v8::String::Utf8Value ret(re->ToString());
+      return __strdup(*ret);
     } else {
       return __strdup(to_json(result).c_str());
     }
