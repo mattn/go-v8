@@ -84,7 +84,7 @@ _go_call(const v8::Arguments& args) {
       data[i].obj_type = v8array;
       data[i].repr = __strdup(*argString);
     } else if (arg->IsObject()) {
-      data[i].obj_type = v8array;
+      data[i].obj_type = v8object;
       data[i].repr = __strdup(*argString);
     } else {
       data[i].obj_type = v8string;
