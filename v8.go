@@ -191,7 +191,7 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 		out := C.GoString(ret)
 		if out != "" {
 			C.free(unsafe.Pointer(ret))
-			if len(out) >= 14 && out[:13] == "function () {" && out[len(out)-1] == '}' {
+			if len(out) >= 14 && out[:9] == "function " && out[len(out)-1] == '}' {
 				name := fmt.Sprintf("anonymous%v", &out)
 				v.funcs[name] = func(args ...interface{}) (interface{}, error) {
 					return (V8Function{v, out}).Call(args...)
