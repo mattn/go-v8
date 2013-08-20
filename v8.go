@@ -40,18 +40,16 @@ function {{.name}}() {
   return _go_call({{.id}}, "{{.name}}", arguments);
 }`))
 
-type GoFunc func(...interface{}) (interface{}, error)
-
-type V8Function struct {
+type Function struct {
 	ctx  *V8Context
 	repr string
 }
 
-type V8NamedObject struct {
+type NamedObject struct {
 	Name string
 }
 
-func (f V8Function) Call(args ...interface{}) (interface{}, error) {
+func (f Function) Call(args ...interface{}) (interface{}, error) {
 	var arguments bytes.Buffer
 	for i, arg := range args {
 		fn, ok := arg.(func(...interface{}) (interface{}, error))
@@ -66,7 +64,7 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 			})
 			arguments.WriteString("(" + buf.String() + ")")
 		} else {
-			if v8obj, ok := arg.(V8NamedObject); ok {
+			if v8obj, ok := arg.(NamedObject); ok {
 				arguments.WriteString(v8obj.Name)
 			} else if re, ok := arg.(*regexp.Regexp); ok {
 				arguments.WriteString(re.String())
@@ -82,7 +80,7 @@ func (f V8Function) Call(args ...interface{}) (interface{}, error) {
 	return f.ctx.Eval("(" + f.repr + ")(" + arguments.String() + ")")
 }
 
-func (f V8Function) String() string {
+func (f Function) String() string {
 	return f.repr
 }
 
@@ -104,7 +102,7 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 				argv = append(argv, regexp.MustCompile(jsregexp.Translate(C.GoString(obj.repr))))
 				break
 			case C.v8function:
-				argv = append(argv, V8Function{ctx, C.GoString(obj.repr)})
+				argv = append(argv, Function{ctx, C.GoString(obj.repr)})
 				break
 			case C.v8number:
 				if f, err := strconv.ParseFloat(C.GoString(obj.repr), 64); err == nil {
@@ -192,11 +190,14 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 		if out != "" {
 			C.free(unsafe.Pointer(ret))
 			if len(out) >= 14 && out[:9] == "function " && out[len(out)-1] == '}' {
+				/*
 				name := fmt.Sprintf("anonymous%v", &out)
 				v.funcs[name] = func(args ...interface{}) (interface{}, error) {
-					return (V8Function{v, out}).Call(args...)
+					return (Function{v, out}).Call(args...)
 				}
 				return v.funcs[name], nil
+				*/
+				return Function{v, out}, nil
 			} else if len(out) >= 2 && out[0] == '/' && out[len(out)-1] == '/' {
 				res, err = regexp.Compile(jsregexp.Translate(out))
 			} else {

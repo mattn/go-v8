@@ -11,13 +11,13 @@ func main() {
 	// setup console.log()
 	v8ctx.Eval(`
 	this.console = { "log": function(args) { _console_log.apply(null, arguments) }}`)
-	v8ctx.AddFunc("_console_log", func(args ...interface{}) interface{} {
+	v8ctx.AddFunc("_console_log", func(args ...interface{}) (interface{}, error) {
 		fmt.Printf("Go console log: ")
 		for i := 0; i < len(args); i++ {
 			fmt.Printf("%v ", args[i])
 		}
 		fmt.Println()
-		return ""
+		return "", nil
 	})
 
 	ret := v8ctx.MustEval(`
@@ -31,12 +31,12 @@ func main() {
 	v8ctx.Eval(`console.log(a + '年' + b + '組 金八先生！', 'something else')`) // 3b
 	v8ctx.Eval(`console.log("Hello World, こんにちわ世界")`)                    // john
 
-	v8ctx.AddFunc("func_call", func(args ...interface{}) interface{} {
-		f := func(args ...interface{}) interface{} {
-			return "V8"
+	v8ctx.AddFunc("func_call", func(args ...interface{}) (interface{}, error) {
+		f := func(args ...interface{}) (interface{}, error) {
+			return "V8", nil
 		}
-		ret, _ := args[0].(v8.V8Function).Call("Go", 2, 1, f)
-		return ret
+		ret, _ := args[0].(v8.Function).Call("Go", 2, 1, f)
+		return ret, nil
 	})
 
 	fmt.Println(v8ctx.MustEval(`
