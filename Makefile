@@ -1,7 +1,3 @@
-ifndef GOOS
-GOOS := `go env GOOS`
-endif
-
 .PHONY: go-install
 
 all: libv8wrap.a go-install
