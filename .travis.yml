@@ -4,6 +4,7 @@ go:
 before_install:
   - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls
+  - go get github.com/cwc/jsregexp
 
 before_script:
   - git clone --depth 10 git://github.com/v8/v8.git
