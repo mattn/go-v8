@@ -213,6 +213,14 @@ func TestAddFuncReturnObject(t *testing.T) {
 	}
 }
 
+func TestMustEval(t *testing.T) {
+	ctx := NewContext()
+	res := ctx.MustEval(`1`)
+	if int(res.(float64)) != 1 {
+		t.Fatal("Expected result to be 1, got", res)
+	}
+}
+
 func v8EvalRoutine(i int, wg *sync.WaitGroup, t *testing.T) {
 	defer wg.Done()
 
