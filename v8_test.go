@@ -221,6 +221,26 @@ func TestMustEval(t *testing.T) {
 	}
 }
 
+func TestCall(t *testing.T) {
+	ctx := NewContext()
+	ctx.AddFunc("func_call", func(args ...interface{}) (interface{}, error) {
+		f := func(args ...interface{}) (interface{}, error) {
+			return "V8", nil
+		}
+		ret, _ := args[0].(Function).Call("Go", 2, 1, f)
+		return ret, nil
+	})
+
+	r := ctx.MustEval(`
+	func_call(function() {
+		return "Hello " + arguments[0] + (arguments[1] - arguments[2])
+			+ ", Hello " + arguments[3]();
+	})
+	`).(string)
+	if r != "Hello Go1, Hello V8" {
+		t.Fatal(`Expected result to be "Hello Go1, Hello V8", got`, r)
+	}
+}
 func v8EvalRoutine(i int, wg *sync.WaitGroup, t *testing.T) {
 	defer wg.Done()
 
