@@ -1,7 +1,7 @@
 package v8
 
 /*
-#cgo LDFLAGS: -L. libv8wrap.a -lv8 -lstdc++
+#cgo LDFLAGS: -lv8 -lstdc++
 
 #include <stdlib.h>
 #include "v8wrap.h"
