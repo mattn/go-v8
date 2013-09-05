@@ -5,14 +5,7 @@ before_install:
   - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls
   - go get github.com/cwc/jsregexp
+  - sudo apt-get install libv8-dev
 
-before_script:
-  - git clone --depth 10 git://github.com/v8/v8.git
-  - cd v8 && git describe --always
-  - make dependencies && make native library=shared -j8
-  - sudo install -v --mode=0644 include/* /usr/include
-  - sudo install -v --mode=0644 out/native/lib.target/libv8.so /usr/lib/libv8.so
-  - sudo install -v out/native/d8 /usr/bin/d8
-  - cd ..
 script:
   - $HOME/gopath/bin/goveralls pwWfQ7Jb6JEdBgqH4DZVAF9sA45xi9FpS
