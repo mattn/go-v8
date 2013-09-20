@@ -19,7 +19,7 @@ static volatile v8wrap_callback ___go_v8_callback = NULL;
 
 static std::string
 to_json(v8::Handle<v8::Value> value) {
-  v8::HandleScope scope;
+  v8::HandleScope scope(v8::Isolate::GetCurrent());
   v8::TryCatch try_catch;
   v8::Handle<v8::Object> json = v8::Handle<v8::Object>::Cast(
     v8::Context::GetCurrent()->Global()->Get(v8::String::New("JSON")));
@@ -34,7 +34,7 @@ to_json(v8::Handle<v8::Value> value) {
 
 v8::Handle<v8::Value>
 from_json(std::string str) {
-  v8::HandleScope scope;
+  v8::HandleScope scope(v8::Isolate::GetCurrent());
   v8::TryCatch try_catch;
 
   v8::Handle<v8::Object> json = v8::Handle<v8::Object>::Cast(
@@ -51,8 +51,8 @@ v8_get_array_item(v8data* array, int index) {
   return array[index];
 }
 
-v8::Handle<v8::Value>
-_go_call(const v8::Arguments& args) {
+void
+_go_call(const v8::FunctionCallbackInfo<v8::Value>& args) {
   v8::Locker v8Locker;
   uint32_t id = args[0]->ToUint32()->Value();
   v8::String::Utf8Value name(args[1]);
@@ -106,33 +106,34 @@ _go_call(const v8::Arguments& args) {
   if (retv != NULL) {
     v8::Handle<v8::Value> ret = from_json(retv);
     free(retv);
-    return ret;
+    args.GetReturnValue().Set(ret);
   }
-  return v8::Undefined();
+  args.GetReturnValue().Set(v8::Undefined());
 }
 
 class V8Context {
 public:
   V8Context() : err_("") {
     v8::Locker v8Locker;
-    v8::HandleScope scope;
-    global_ = v8::Persistent<v8::ObjectTemplate>::New(v8::ObjectTemplate::New());
-    global_->Set(v8::String::New("_go_call"),
+    v8::Isolate* isolate = v8::Isolate::GetCurrent();
+    v8::HandleScope scope(isolate);
+    v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
+    global->Set(v8::String::New("_go_call"),
       v8::FunctionTemplate::New(_go_call));
-    v8::Handle<v8::Context> context = v8::Context::New(NULL, global_);
-    context_ = v8::Persistent<v8::Context>::New(context);
+    
+    v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
+    context_.Reset(isolate, context);
+  
   };
 
   virtual ~V8Context() {
     context_.Dispose();
-    global_.Dispose();
   };
-  v8::Handle<v8::Context> context() { return context_; };
+  v8::Handle<v8::Context> context() { return v8::Handle<v8::Context>::New(v8::Isolate::GetCurrent(), context_); };
   const char* err() const { return err_.c_str(); };
   void err(const char* e) { this->err_ = std::string(e); }
 
 private:
-  v8::Persistent<v8::ObjectTemplate> global_;
   v8::Persistent<v8::Context> context_;
   std::string err_;
 };
@@ -197,7 +198,7 @@ char*
 v8_execute(void *ctx, char* source) {
   v8::Locker v8Locker;
   V8Context *context = static_cast<V8Context *>(ctx);
-  v8::HandleScope scope;
+  v8::HandleScope scope(v8::Isolate::GetCurrent());
   v8::TryCatch try_catch;
 
   v8::Context::Scope context_scope(context->context());
