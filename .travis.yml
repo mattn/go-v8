@@ -8,4 +8,4 @@ before_install:
   - sudo apt-get install libv8-dev
 
 script:
-  - $HOME/gopath/bin/goveralls pwWfQ7Jb6JEdBgqH4DZVAF9sA45xi9FpS
+  - $HOME/gopath/bin/goveralls -repotoken pwWfQ7Jb6JEdBgqH4DZVAF9sA45xi9FpS
