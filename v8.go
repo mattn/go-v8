@@ -1,7 +1,7 @@
 package v8
 
 /*
-#cgo LDFLAGS: -L. -L/usr/local/lib libv8wrap.a -lv8_base.x64 -lv8 -lv8_nosnapshot.x64 -lstdc++
+#cgo pkg-config: v8.pc
 
 #include <stdlib.h>
 #include "v8wrap.h"

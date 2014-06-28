@@ -1,2 +1,5 @@
 *.a
 example/example
+*.pc
+*.tar.gz
+v8-*/
