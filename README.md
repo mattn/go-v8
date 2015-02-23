@@ -5,22 +5,7 @@ WHATS:
 ------
 
   Go bindings for V8
-
-UPDATE for V8 3.21
-------------------
-
-Only got this going against v8 for OSX.  Build V8 for OSX as described by https://code.google.com/p/v8/wiki/BuildingWithGYP
-Copy $(V8SRCROOT)/include/ files to /usr/local/include
-Copy $(V8SRCROOT)/native/out/libv8\* files to /usr/local/lib
-
-Issues:
-
-    # go test
-    # testmain
-    github.com/mattn/go-v8(__DATA/__datacoal_nt): unexpected reloc for dynamic symbol _ZTVN10__cxxabiv117__class_type_infoE
-    github.com/mattn/go-v8(__DATA/__datacoal_nt): unhandled relocation for _ZTVN10__cxxabiv117__class_type_infoE (type 28 rtype 120)
-    FAIL    github.com/mattn/go-v8 [build failed]
-
+  V8 Version 3.25.30
 
 INSTALL:
 --------
@@ -28,7 +13,9 @@ INSTALL:
 WIN32
 
 	# To Build v8 go package:
-	# make v8wrap.dll
+	# CMake .
+	# make
+	# make install
 	# go install
 
 	# To run go-v8 tests:
@@ -43,7 +30,9 @@ WIN32
 LINUX
 
 	# To Build v8 go package:
-	# make libv8wrap.so
+	# CMake .
+	# make
+	# make install
 	# go install
 
 	# To run go-v8 tests:
@@ -52,21 +41,24 @@ LINUX
 	# To run example go exec:
 	# cd example
 	# go build example.go
-	# LD_LIBRARY_PATH=.. ./example
+	# ./example
 
 MAC OS X
 
 	# To Build v8 go package:
-	# make libv8wrap.so
+
+	# CMake .
+	# make
+	# make install
 	# go install
 
 	# To run go-v8 tests:
-	# DYLD_LIBRARY_PATH=. go test
+	# go test
 
 	# To run example go exec:
 	# cd example
 	# go build example.go
-	# DYLD_LIBRARY_PATH=.. ./example
+	# ./example
 
 LICENSE:
 --------

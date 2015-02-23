@@ -1,7 +1,7 @@
 package v8
 
 /*
-#cgo LDFLAGS: -L. -L/usr/local/lib libv8wrap.a -lv8_base.x64 -lv8 -lv8_nosnapshot.x64 -lstdc++
+#cgo LDFLAGS: -lv8wrap -lv8
 
 #include <stdlib.h>
 #include "v8wrap.h"
@@ -37,7 +37,8 @@ var contexts = make(map[uint32]*V8Context)
 
 var tmpl = template.Must(template.New("go-v8").Parse(`
 function {{.name}}() {
-  return _go_call({{.id}}, "{{.name}}", arguments);
+  var ret = _go_call({{.id}}, "{{.name}}", arguments);
+  return JSON.parse(ret);
 }`))
 
 type Function struct {
@@ -88,7 +89,6 @@ func (f Function) String() string {
 func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data, count C.int) *C.char {
 	ctx := contexts[contextId]
 	fn := ctx.funcs[C.GoString(functionName)]
-
 	if fn != nil {
 		var argv []interface{}
 
@@ -96,7 +96,6 @@ func _go_v8_callback(contextId uint32, functionName *C.char, v8Objects *C.v8data
 		i := C.int(0)
 		for ; i < count; i++ {
 			obj := C.v8_get_array_item(v8Objects, i)
-
 			switch obj.obj_type {
 			case C.v8regexp:
 				argv = append(argv, regexp.MustCompile(jsregexp.Translate(C.GoString(obj.repr))))
@@ -191,11 +190,11 @@ func (v *V8Context) Eval(in string) (res interface{}, err error) {
 			C.free(unsafe.Pointer(ret))
 			if len(out) >= 14 && out[:9] == "function " && out[len(out)-1] == '}' {
 				/*
-				name := fmt.Sprintf("anonymous%v", &out)
-				v.funcs[name] = func(args ...interface{}) (interface{}, error) {
-					return (Function{v, out}).Call(args...)
-				}
-				return v.funcs[name], nil
+					name := fmt.Sprintf("anonymous%v", &out)
+					v.funcs[name] = func(args ...interface{}) (interface{}, error) {
+						return (Function{v, out}).Call(args...)
+					}
+					return v.funcs[name], nil
 				*/
 				return Function{v, out}, nil
 			} else if len(out) >= 2 && out[0] == '/' && out[len(out)-1] == '/' {

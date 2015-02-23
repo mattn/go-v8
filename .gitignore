@@ -1,2 +1,9 @@
 *.a
 example/example
+CMakeFiles
+cmake_install.cmake
+install_manifest.txt
+CMakeCache.txt
+*.dylib
+Makefile
+.DS_Store

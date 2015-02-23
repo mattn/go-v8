@@ -18,32 +18,20 @@ __strdup(const char* ptr) {
 static volatile v8wrap_callback ___go_v8_callback = NULL;
 
 static std::string
-to_json(v8::Handle<v8::Value> value) {
-  v8::HandleScope scope(v8::Isolate::GetCurrent());
+to_json(v8::Isolate* isolate, v8::Handle<v8::Value> value) {
+  v8::HandleScope scope(isolate);
   v8::TryCatch try_catch;
+  v8::Handle<v8::Object> global = isolate->GetCurrentContext()->Global();
+
   v8::Handle<v8::Object> json = v8::Handle<v8::Object>::Cast(
-    v8::Context::GetCurrent()->Global()->Get(v8::String::New("JSON")));
+    global->Get(v8::String::NewFromUtf8(isolate, "JSON")));
   v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(
-    json->GetRealNamedProperty(v8::String::New("stringify")));
+    json->GetRealNamedProperty(v8::String::NewFromUtf8(isolate, "stringify")));
   v8::Handle<v8::Value> args[1];
   args[0] = value;
   v8::String::Utf8Value ret(
-    func->Call(v8::Context::GetCurrent()->Global(), 1, args)->ToString());
+    func->Call(global, 1, args)->ToString());
   return (char*) *ret;
-}
-
-v8::Handle<v8::Value>
-from_json(std::string str) {
-  v8::HandleScope scope(v8::Isolate::GetCurrent());
-  v8::TryCatch try_catch;
-
-  v8::Handle<v8::Object> json = v8::Handle<v8::Object>::Cast(
-    v8::Context::GetCurrent()->Global()->Get(v8::String::New("JSON")));
-  v8::Handle<v8::Function> func = v8::Handle<v8::Function>::Cast(
-    json->GetRealNamedProperty(v8::String::New("parse")));
-  v8::Handle<v8::Value> args[1];
-  args[0] = v8::String::New(str.c_str());
-  return func->Call(v8::Context::GetCurrent()->Global(), 1, args);
 }
 
 v8data
@@ -53,7 +41,8 @@ v8_get_array_item(v8data* array, int index) {
 
 void
 _go_call(const v8::FunctionCallbackInfo<v8::Value>& args) {
-  v8::Locker v8Locker;
+  v8::Isolate* isolate = args.GetIsolate();
+  v8::Locker v8Locker(isolate);
   uint32_t id = args[0]->ToUint32()->Value();
   v8::String::Utf8Value name(args[1]);
 
@@ -85,10 +74,10 @@ _go_call(const v8::FunctionCallbackInfo<v8::Value>& args) {
       data[i].repr = __strdup(*argString);
     } else if (arg->IsObject()) {
       data[i].obj_type = v8object;
-      data[i].repr = __strdup(*argString);
+      data[i].repr = __strdup(to_json(isolate, arg).c_str());
     } else {
       data[i].obj_type = v8string;
-      data[i].repr = __strdup(to_json(arg).c_str());
+      data[i].repr = __strdup(*argString);
     }
   }
 
@@ -104,32 +93,33 @@ _go_call(const v8::FunctionCallbackInfo<v8::Value>& args) {
   free(data);
 
   if (retv != NULL) {
-    v8::Handle<v8::Value> ret = from_json(retv);
-    free(retv);
+    v8::Handle<v8::Value> ret = v8::String::NewFromUtf8(isolate, retv);
     args.GetReturnValue().Set(ret);
+    free(retv);
+  }else{
+    args.GetReturnValue().Set(v8::Undefined(isolate));
   }
-  args.GetReturnValue().Set(v8::Undefined());
 }
 
 class V8Context {
 public:
   V8Context() : err_("") {
-    v8::Locker v8Locker;
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
+    v8::Locker v8Locker(isolate);
     v8::HandleScope scope(isolate);
     v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-    global->Set(v8::String::New("_go_call"),
-      v8::FunctionTemplate::New(_go_call));
-    
+    global->Set(isolate, "_go_call",
+      v8::FunctionTemplate::New(isolate, _go_call));
+
     v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
     context_.Reset(isolate, context);
-  
+
   };
 
   virtual ~V8Context() {
-    context_.Dispose();
+    context_.Reset();
   };
-  v8::Handle<v8::Context> context() { return v8::Handle<v8::Context>::New(v8::Isolate::GetCurrent(), context_); };
+  v8::Local<v8::Context> context() { return v8::Local<v8::Context>::New(v8::Isolate::GetCurrent(), context_); };
   const char* err() const { return err_.c_str(); };
   void err(const char* e) { this->err_ = std::string(e); }
 
@@ -145,7 +135,7 @@ v8_init(void *p) {
 
 void*
 v8_create() {
-  return (void*) new V8Context(); 
+  return (void*) new V8Context();
 }
 
 void
@@ -196,24 +186,25 @@ report_exception(v8::TryCatch& try_catch) {
 
 char*
 v8_execute(void *ctx, char* source) {
-  v8::Locker v8Locker;
+  v8::Isolate *isolate = v8::Isolate::GetCurrent();
+  v8::Locker v8Locker(isolate);
   V8Context *context = static_cast<V8Context *>(ctx);
-  v8::HandleScope scope(v8::Isolate::GetCurrent());
+  v8::HandleScope scope(isolate);
   v8::TryCatch try_catch;
 
   v8::Context::Scope context_scope(context->context());
 
   context->err("");
   v8::Handle<v8::Script> script
-    = v8::Script::Compile(v8::String::New(source), v8::Undefined());
+    = v8::Script::Compile(v8::String::NewFromUtf8(isolate, source));
   if (script.IsEmpty()) {
-    v8::ThrowException(try_catch.Exception());
+    isolate->ThrowException(try_catch.Exception());
     context->err(report_exception(try_catch).c_str());
     return NULL;
   } else {
     v8::Handle<v8::Value> result = script->Run();
     if (result.IsEmpty()) {
-      v8::ThrowException(try_catch.Exception());
+      isolate->ThrowException(try_catch.Exception());
       context->err(report_exception(try_catch).c_str());
       return NULL;
     } else if (result->IsUndefined()) {
@@ -227,7 +218,7 @@ v8_execute(void *ctx, char* source) {
       v8::String::Utf8Value ret(re->ToString());
       return __strdup(*ret);
     } else {
-      return __strdup(to_json(result).c_str());
+      return __strdup(to_json(isolate, result).c_str());
     }
   }
 }
