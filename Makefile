@@ -1,14 +1,13 @@
-.PHONY: go-install
+CC=g++
+CFLAGS= -I/usr/include -lv8 -dynamiclib -o $(TARGET) -DDEBUG -g -O2
+SOURCES=v8wrap.cc
+OBJECTS=$(SOURCES:.cc=.o) $(V8_DYLIB)
+TARGET=libv8wrap.dylib
 
-all: libv8wrap.a go-install
+all: $(TARGET)
 
-libv8wrap.a : v8wrap.cc v8.go
-	g++ `go env GOGCCFLAGS` -I. -c v8wrap.cc -lv8
-	ar rvs libv8wrap.a v8wrap.o
-	rm v8wrap.o
-
-go-install:
-	go install
+$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.a
+	rm $(TARGET) $(OBJECTS)

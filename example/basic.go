@@ -1,5 +1,9 @@
 package main
 
+// #cgo LDFLAGS: -L. -lv8wrap -lv8 -lstdc++
+// #include <stdlib.h>
+// #include "v8wrapper.h"
+//
 import (
 	"fmt"
 	"github.com/mattn/go-v8"
@@ -9,8 +13,6 @@ func main() {
 	v8ctx := v8.NewContext()
 
 	// setup console.log()
-	v8ctx.Eval(`
-	this.console = { "log": function(args) { _console_log.apply(null, arguments) }}`)
 	v8ctx.AddFunc("_console_log", func(args ...interface{}) (interface{}, error) {
 		fmt.Printf("Go console log: ")
 		for i := 0; i < len(args); i++ {
@@ -20,6 +22,8 @@ func main() {
 		return "", nil
 	})
 
+	v8ctx.Eval(`
+	this.console = { "log": function(args) { _console_log.apply(null, arguments) }}`)
 	ret := v8ctx.MustEval(`
 	var a = 1;
 	var b = 'B'
@@ -30,7 +34,7 @@ func main() {
 
 	v8ctx.Eval(`console.log(a + '年' + b + '組 金八先生！', 'something else')`) // 3b
 	v8ctx.Eval(`console.log("Hello World, こんにちわ世界")`)                    // john
-
+	v8ctx.Eval(`console.log({"hoge": "fuga"})`)                          // john
 	v8ctx.AddFunc("func_call", func(args ...interface{}) (interface{}, error) {
 		f := func(args ...interface{}) (interface{}, error) {
 			return "V8", nil
@@ -40,9 +44,9 @@ func main() {
 	})
 
 	fmt.Println(v8ctx.MustEval(`
-	func_call(function() {
-		return "Hello " + arguments[0] + (arguments[1] - arguments[2])
-			+ ", Hello " + arguments[3]();
-	})
-	`).(string))
+		func_call(function() {
+			return "Hello " + arguments[0] + (arguments[1] - arguments[2])
+				+ ", Hello " + arguments[3]();
+		})
+		`).(string))
 }

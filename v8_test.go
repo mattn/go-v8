@@ -51,7 +51,6 @@ func TestEvalScript(t *testing.T) {
 
 func TestAddFunc(t *testing.T) {
 	ctx := NewContext()
-
 	err := ctx.AddFunc("_gov8_testFunc", func(args ...interface{}) (interface{}, error) {
 		if len(args) != 2 {
 			t.Fatal("Unexpected number of _gov8_testFunc's arguments.", len(args))
