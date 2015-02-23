@@ -1,9 +1,5 @@
 package main
 
-// #cgo LDFLAGS: -L. -lv8wrap -lv8 -lstdc++
-// #include <stdlib.h>
-// #include "v8wrapper.h"
-//
 import (
 	"fmt"
 	"github.com/mattn/go-v8"

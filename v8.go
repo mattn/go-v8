@@ -1,7 +1,7 @@
 package v8
 
 /*
-#cgo LDFLAGS: -L. -lv8wrap -lv8
+#cgo LDFLAGS: -lv8wrap -lv8
 
 #include <stdlib.h>
 #include "v8wrap.h"
@@ -32,8 +32,6 @@ import (
 
 	"github.com/cwc/jsregexp"
 )
-
-// This code is from https://github.com/mattn/go-v8
 
 var contexts = make(map[uint32]*V8Context)
 
