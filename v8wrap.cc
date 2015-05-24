@@ -107,6 +107,7 @@ _go_call(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Handle<v8::Value> ret = from_json(retv);
     free(retv);
     args.GetReturnValue().Set(ret);
+    return;
   }
   args.GetReturnValue().Set(v8::Undefined());
 }
