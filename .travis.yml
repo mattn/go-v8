@@ -2,8 +2,8 @@ language: go
 go:
   - tip
 before_install:
-  - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
   - go get github.com/cwc/jsregexp
   - sudo apt-get install libv8-dev
 
